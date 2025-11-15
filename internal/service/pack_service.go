@@ -90,6 +90,12 @@ func (s *packService) GetPackSizes(ctx context.Context) (*model.GetPackSizesResp
 	}, nil
 }
 
+// UpdatePackSizes updates the pack sizes in the repository
 func (s *packService) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error {
+	err := s.packRepo.UpdatePackSizes(ctx, sizes, updatedBy)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
