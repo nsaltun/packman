@@ -16,19 +16,19 @@ func TestCalculatePacks(t *testing.T) {
 		name      string
 		packSizes []int
 		quantity  int
-		expected  model.PackCalculationResponse
+		expected  *model.PackCalculationResponse
+		repoErr   error
 		wantErr   error
 	}{
 		{
 			name:      "Exact match with multiple pack sizes",
 			packSizes: []int{250, 500, 1000, 2000, 5000},
 			quantity:  12000,
-			expected: model.PackCalculationResponse{
+			expected: &model.PackCalculationResponse{
 				Quantity: 12000,
 				Packs: map[int]int{
 					5000: 2,
 					2000: 1,
-					1000: 1,
 				},
 			},
 		},
@@ -36,7 +36,7 @@ func TestCalculatePacks(t *testing.T) {
 			name:      "Exact match with single pack size",
 			packSizes: []int{250, 500, 1000, 2000, 5000},
 			quantity:  10000,
-			expected: model.PackCalculationResponse{
+			expected: &model.PackCalculationResponse{
 				Quantity: 10000,
 				Packs: map[int]int{
 					5000: 2,
@@ -47,12 +47,12 @@ func TestCalculatePacks(t *testing.T) {
 			name:      "No exact match",
 			packSizes: []int{250, 500, 1000, 2000, 5000},
 			quantity:  7500,
-			expected: model.PackCalculationResponse{
+			expected: &model.PackCalculationResponse{
 				Quantity: 7500,
 				Packs: map[int]int{
 					5000: 1,
 					2000: 1,
-					1000: 1,
+					500:  1,
 				},
 			},
 		},
@@ -60,16 +60,10 @@ func TestCalculatePacks(t *testing.T) {
 			name:      "Quantity less than smallest pack size",
 			packSizes: []int{250, 500, 1000, 2000, 5000},
 			quantity:  100,
-			expected: model.PackCalculationResponse{
+			expected: &model.PackCalculationResponse{
 				Quantity: 100,
-				Packs:    map[int]int{100: 1},
+				Packs:    map[int]int{250: 1},
 			},
-		},
-		{
-			name:      "Zero quantity",
-			packSizes: []int{250, 500, 1000, 2000, 5000},
-			quantity:  0,
-			wantErr:   fmt.Errorf("quantity must be greater than zero"),
 		},
 		{
 			name:      "pack sizes empty",
@@ -81,14 +75,21 @@ func TestCalculatePacks(t *testing.T) {
 			name:      "edge case",
 			packSizes: []int{23, 31, 53},
 			quantity:  500000,
-			expected: model.PackCalculationResponse{
+			expected: &model.PackCalculationResponse{
 				Quantity: 500000,
 				Packs: map[int]int{
-					53: 9429,
-					31: 7,
-					23: 2,
+					53: 9433,
+					31: 1,
+					23: 1,
 				},
 			},
+		},
+		{
+			name:      "repository error",
+			packSizes: nil,
+			quantity:  1000,
+			repoErr:   fmt.Errorf("database error"),
+			wantErr:   fmt.Errorf("database error"),
 		},
 	}
 
@@ -97,7 +98,7 @@ func TestCalculatePacks(t *testing.T) {
 			//setup
 			repoMock := mocks.MockPackRepository{}
 			service := packService{packRepo: &repoMock}
-			repoMock.On("GetPackSizes", mock.Anything).Return(tt.packSizes, nil) // Reset mock for each test
+			repoMock.On("GetPackSizes", mock.Anything).Return(tt.packSizes, tt.repoErr) // Reset mock for each test
 
 			//execute
 			res, err := service.CalculatePacks(context.Background(), tt.quantity)

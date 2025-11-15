@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"sort"
 
 	"github.com/nsaltun/packman/internal/model"
 	"github.com/nsaltun/packman/internal/repository"
@@ -31,12 +32,48 @@ func (s *packService) CalculatePacks(ctx context.Context, quantity int) (*model.
 
 	// implement calculation logic
 	if len(packSizes) == 0 {
-		return nil, errors.New("no pack sizes available")
+		return nil, errors.New("pack sizes empty. Cannot calculate packs")
 	}
 
-	// TODO: Implement pack calculation logic
+	// sort pack sizes in descending order
+	sort.Slice(packSizes, func(i, j int) bool {
+		return packSizes[i] > packSizes[j]
+	})
 
-	return nil, nil
+	//-- Callculate packs --
+
+	//Create a copy of quantity to return later
+	originalQuantity := quantity
+
+	// get the smallest pack size
+	minPackSize := packSizes[len(packSizes)-1]
+
+	// greedy algorithm to find the combination of packs
+	packsNumberResult := make(map[int]int, 0)
+	// iterate over pack sizes
+	for _, packSize := range packSizes {
+		// if quantity is zero, break
+		if quantity == 0 {
+			break
+		}
+		// calculate number of packs for current pack size
+		if quantity >= packSize {
+			// integer division to get number of packs
+			numPacks := quantity / packSize
+			// update result map
+			packsNumberResult[packSize] = numPacks
+			// update remaining quantity
+			quantity -= numPacks * packSize
+		}
+	}
+
+	// if there is remaining quantity less than the smallest pack size, add one smallest pack
+	if quantity > 0 {
+		packsNumberResult[minPackSize] += 1
+	}
+
+	// return result
+	return &model.PackCalculationResponse{Packs: packsNumberResult, Quantity: originalQuantity}, nil
 }
 
 func (s *packService) GetPackSizes(ctx context.Context) (*model.GetPackSizesResponse, error) {
