@@ -9,20 +9,24 @@ import (
 	"github.com/nsaltun/packman/internal/repository"
 )
 
+// PackService defines the interface for pack-related operations
 type PackService interface {
 	CalculatePacks(ctx context.Context, quantity int) (*model.PackCalculationResponse, error)
 	GetPackSizes(ctx context.Context) (*model.GetPackSizesResponse, error)
 	UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error
 }
 
+// packService is the concrete implementation of PackService
 type packService struct {
 	packRepo repository.PackRepository
 }
 
+// NewPackService creates a new instance of PackService
 func NewPackService(packRepo repository.PackRepository) PackService {
 	return &packService{packRepo: packRepo}
 }
 
+// CalculatePacks calculates the optimal combination of packs for a given quantity
 func (s *packService) CalculatePacks(ctx context.Context, quantity int) (*model.PackCalculationResponse, error) {
 	// get pack sizes from repository
 	packSizes, err := s.packRepo.GetPackSizes(ctx)
@@ -76,6 +80,7 @@ func (s *packService) CalculatePacks(ctx context.Context, quantity int) (*model.
 	return &model.PackCalculationResponse{Packs: packsNumberResult, Quantity: originalQuantity}, nil
 }
 
+// GetPackSizes retrieves the current pack sizes from the repository
 func (s *packService) GetPackSizes(ctx context.Context) (*model.GetPackSizesResponse, error) {
 	res, err := s.packRepo.GetPackConfiguration(ctx)
 	if err != nil {

@@ -8,22 +8,26 @@ import (
 	"github.com/nsaltun/packman/internal/service"
 )
 
+// PackHttpHandler defines the interface for pack-related HTTP handlers
 type PackHttpHandler interface {
 	CalculatePacks(c *gin.Context)
 	GetPackSizes(c *gin.Context)
 	UpdatePackSizes(c *gin.Context)
 }
 
+// HttpHandler defines the interface for HTTP handlers
 type HttpHandler interface {
 	PackHttpHandler
 	Health(c *gin.Context)
 	registerRoutes(r *gin.Engine)
 }
 
+// httpHandler is the concrete implementation of HttpHandler
 type httpHandler struct {
 	packService service.PackService
 }
 
+// NewHTTPHandler creates a new HTTP handler with the given services
 func NewHTTPHandler(packService service.PackService) HttpHandler {
 	return &httpHandler{
 		packService: packService,
@@ -41,6 +45,7 @@ func (h *httpHandler) registerRoutes(r *gin.Engine) {
 	r.GET("/health", h.Health)
 }
 
+// CalculatePacks handles the calculation of packs for a given quantity
 func (h *httpHandler) CalculatePacks(c *gin.Context) {
 	var req model.PackCalculationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,6 +61,7 @@ func (h *httpHandler) CalculatePacks(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// GetPackSizes handles retrieving the current pack sizes
 func (h *httpHandler) GetPackSizes(c *gin.Context) {
 	res, err := h.packService.GetPackSizes(c.Request.Context())
 	if err != nil {
@@ -65,6 +71,7 @@ func (h *httpHandler) GetPackSizes(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// UpdatePackSizes handles updating the pack sizes
 func (h *httpHandler) UpdatePackSizes(c *gin.Context) {
 	var req model.UpdatePackSizesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -79,9 +86,10 @@ func (h *httpHandler) UpdatePackSizes(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }
 
+// Health handles the health check endpoint
 func (h *httpHandler) Health(c *gin.Context) {
 	// TODO: Implement
-	// 1. Check database connection (optional)
+	// 1. Check database connection
 	// 2. Return health status
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
