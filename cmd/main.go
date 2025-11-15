@@ -12,12 +12,12 @@ import (
 )
 
 func main() {
+	//TODO: load config from file/env
+	cfg := config.NewConfig()
+
 	//TODO: implement log LEVEL from config
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
-
-	//TODO: load config from file/env
-	cfg := config.NewConfig()
 
 	//TODO: initialize postgres client
 	packRepo := repository.NewPostgresRepo(nil)
