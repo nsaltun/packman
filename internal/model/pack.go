@@ -17,6 +17,7 @@ type GetPackSizesResponse struct {
 	PackSizes []int     `json:"pack_sizes"`
 	Version   int       `json:"version"`
 	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedBy string    `json:"updated_by,omitempty"`
 }
 
 // UpdatePackSizesRequest represents a request to update pack sizes

@@ -77,7 +77,17 @@ func (s *packService) CalculatePacks(ctx context.Context, quantity int) (*model.
 }
 
 func (s *packService) GetPackSizes(ctx context.Context) (*model.GetPackSizesResponse, error) {
-	return nil, nil
+	res, err := s.packRepo.GetPackConfiguration(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.GetPackSizesResponse{
+		PackSizes: res.PackSizes,
+		UpdatedAt: res.UpdatedAt,
+		UpdatedBy: res.UpdatedBy,
+		Version:   res.Version,
+	}, nil
 }
 
 func (s *packService) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error {
