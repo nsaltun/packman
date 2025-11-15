@@ -1,9 +1,7 @@
-.PHONY: help build run test clean docker-build docker-run docker-stop docker-clean logs fmt lint
+.PHONY: help build run test clean docker-up docker-down docker-logs docker-clean fmt lint
 
 # Variables
 APP_NAME=packman
-DOCKER_IMAGE=packman:latest
-DOCKER_CONTAINER=packman-container
 
 # Default target
 help:
@@ -12,10 +10,10 @@ help:
 	@echo "  make run            - Run the application locally"
 	@echo "  make test           - Run tests"
 	@echo "  make clean          - Clean build artifacts"
-	@echo "  make docker-build   - Build Docker image"
-	@echo "  make docker-stop    - Stop Docker containers"
-	@echo "  make docker-clean   - Remove Docker containers and images"
-	@echo "  make logs           - Show Docker container logs"
+	@echo "  make docker-up      - Start all services with docker-compose"
+	@echo "  make docker-down    - Stop all services"
+	@echo "  make docker-logs    - Show docker-compose logs"
+	@echo "  make docker-clean   - Stop services and remove volumes"
 	@echo "  make fmt            - Format Go code"
 	@echo "  make lint           - Run golangci-lint (if installed)"
 
@@ -44,37 +42,29 @@ clean:
 	@rm -f coverage.out coverage.html
 	@echo "Clean complete"
 
-# Build Docker image
-docker-build:
-	@echo "Building Docker image $(DOCKER_IMAGE)..."
-	@docker build -t $(DOCKER_IMAGE) .
-	@echo "Docker image built successfully"
+# Start all services with docker-compose
+docker-up:
+	@echo "Starting services with docker-compose..."
+	@docker compose up -d --build
+	@echo "Services started successfully"
+	@echo "Application: http://localhost:8080"
+	@echo "PostgreSQL: localhost:5432"
 
-# Run application in Docker
-docker-run: docker-build
-	@echo "Starting $(APP_NAME) container..."
-	@docker run -d \
-		--name $(DOCKER_CONTAINER) \
-		-p 8080:8080 \
-		$(DOCKER_IMAGE)
-	@echo "$(APP_NAME) is running on http://localhost:8080"
+# Stop all services
+docker-down:
+	@echo "Stopping services..."
+	@docker compose down
+	@echo "Services stopped"
 
-# Stop Docker containers
-docker-stop:
-	@echo "Stopping containers..."
-	@docker stop $(DOCKER_CONTAINER)  2>/dev/null || true
-	@docker rm $(DOCKER_CONTAINER) 2>/dev/null || true
-	@echo "Containers stopped"
+# Show docker-compose logs
+docker-logs:
+	@docker compose logs -f
 
-# Clean Docker resources
-docker-clean: docker-stop
-	@echo "Removing Docker image..."
-	@docker rmi $(DOCKER_IMAGE) 2>/dev/null || true
+# Clean Docker resources (including volumes)
+docker-clean:
+	@echo "Stopping services and removing volumes..."
+	@docker compose down -v
 	@echo "Docker cleanup complete"
-
-# Show Docker logs
-logs:
-	@docker logs -f $(DOCKER_CONTAINER)
 
 # Format Go code
 fmt:

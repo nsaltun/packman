@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: packman-postgres
+    environment:
+      POSTGRES_USER: packman
+      POSTGRES_PASSWORD: packman123
+      POSTGRES_DB: packman
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U packman -d packman"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - packman-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: packman-app
+    environment:
+      PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: packman
+      DB_PASSWORD: packman123
+      DB_NAME: packman
+      DB_SSLMODE: disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - packman-network
+
+volumes:
+  postgres_data:
+
+networks:
+  packman-network:
+    driver: bridge
