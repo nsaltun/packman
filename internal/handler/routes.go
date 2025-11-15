@@ -48,21 +48,32 @@ func (h *httpHandler) registerRoutes(r *gin.Engine) {
 // CalculatePacks handles the calculation of packs for a given quantity
 func (h *httpHandler) CalculatePacks(c *gin.Context) {
 	var req model.PackCalculationRequest
+	// bind JSON request
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// validate request
+	if err := validateCalculatePacksRequest(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// call service to calculate packs
 	res, err := h.packService.CalculatePacks(c.Request.Context(), req.Quantity)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// return response
 	c.JSON(http.StatusOK, res)
 }
 
 // GetPackSizes handles retrieving the current pack sizes
 func (h *httpHandler) GetPackSizes(c *gin.Context) {
+	// call service to get pack sizes
 	res, err := h.packService.GetPackSizes(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -78,7 +89,15 @@ func (h *httpHandler) UpdatePackSizes(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err := h.packService.UpdatePackSizes(c.Request.Context(), nil, "")
+
+	// validate request
+	if err := validateUpdatePackSizesRequest(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// call service to update pack sizes
+	err := h.packService.UpdatePackSizes(c.Request.Context(), req.PackSizes, req.UpdatedBy)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

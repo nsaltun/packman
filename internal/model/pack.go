@@ -22,7 +22,8 @@ type GetPackSizesResponse struct {
 
 // UpdatePackSizesRequest represents a request to update pack sizes
 type UpdatePackSizesRequest struct {
-	PackSizes []int `json:"pack_sizes"`
+	PackSizes []int  `json:"pack_sizes"`
+	UpdatedBy string `json:"updated_by,omitempty"`
 }
 
 // PackConfiguration represents the current pack size configuration
