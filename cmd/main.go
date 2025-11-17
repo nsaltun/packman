@@ -11,6 +11,7 @@ import (
 	"github.com/nsaltun/packman/internal/handler"
 	"github.com/nsaltun/packman/internal/repository"
 	"github.com/nsaltun/packman/internal/service"
+	"github.com/nsaltun/packman/migrations"
 	"github.com/nsaltun/packman/pkg/postgres"
 )
 
@@ -35,6 +36,11 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer pgClient.Close()
+
+	// Run migrations on startup
+	if err := migrations.RunMigrations(pgClient.Pool, cfg.Database.URL); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
 
 	packRepo := repository.NewPostgresRepo(pgClient.Pool)
 	packService := service.NewPackService(packRepo)
