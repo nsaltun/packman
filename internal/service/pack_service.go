@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/nsaltun/packman/internal/apperror"
 	"github.com/nsaltun/packman/internal/model"
 	"github.com/nsaltun/packman/internal/repository"
 )
@@ -31,12 +32,15 @@ func (s *packService) CalculatePacks(ctx context.Context, quantity int) (*model.
 	// get pack sizes from repository
 	packSizes, err := s.packRepo.GetPackSizes(ctx)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, apperror.NotFoundError("Pack configuration not found", err)
+		}
+		return nil, apperror.InternalError("Failed to retrieve pack sizes", err)
 	}
 
 	// implement calculation logic
 	if len(packSizes) == 0 {
-		return nil, errors.New("pack sizes empty. Cannot calculate packs")
+		return nil, apperror.InternalError("Pack sizes configuration is empty", nil)
 	}
 
 	// sort pack sizes in descending order
@@ -84,7 +88,10 @@ func (s *packService) CalculatePacks(ctx context.Context, quantity int) (*model.
 func (s *packService) GetPackSizes(ctx context.Context) (*model.GetPackSizesResponse, error) {
 	res, err := s.packRepo.GetPackConfiguration(ctx)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, apperror.NotFoundError("Pack configuration not found", err)
+		}
+		return nil, apperror.InternalError("Failed to retrieve pack configuration", err)
 	}
 
 	return &model.GetPackSizesResponse{
@@ -99,7 +106,10 @@ func (s *packService) GetPackSizes(ctx context.Context) (*model.GetPackSizesResp
 func (s *packService) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error {
 	err := s.packRepo.UpdatePackSizes(ctx, sizes, updatedBy)
 	if err != nil {
-		return err
+		if errors.Is(err, repository.ErrNotFound) {
+			return apperror.NotFoundError("Pack configuration not found", err)
+		}
+		return apperror.InternalError("Failed to update pack sizes", err)
 	}
 
 	return nil

@@ -2,13 +2,18 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nsaltun/packman/internal/model"
+)
+
+var (
+	// ErrNotFound indicates the requested resource was not found
+	ErrNotFound = errors.New("resource not found")
 )
 
 // postgresRepo implements the PackRepository interface using PostgreSQL
@@ -32,9 +37,9 @@ func (s *postgresRepo) GetPackSizes(ctx context.Context) ([]int, error) {
 		WHERE id = 1`).Scan(&sizes)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("pack configuration not found")
+			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get pack sizes: %w", err)
+		return nil, err
 	}
 
 	return sizes, nil
@@ -58,9 +63,9 @@ func (s *postgresRepo) GetPackConfiguration(ctx context.Context) (*model.PackCon
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("pack configuration not found")
+			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get pack configuration: %w", err)
+		return nil, err
 	}
 
 	cfg.UpdatedAt = updatedAt.Time
@@ -75,7 +80,7 @@ func (s *postgresRepo) UpdatePackSizes(ctx context.Context, sizes []int, updated
 		IsoLevel: pgx.Serializable,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return err
 	}
 
 	// Ensure transaction is rolled back only on error
@@ -97,7 +102,10 @@ func (s *postgresRepo) UpdatePackSizes(ctx context.Context, sizes []int, updated
 		WHERE id = 1 
 		FOR UPDATE`).Scan(&currentVersion)
 	if err != nil {
-		return fmt.Errorf("failed to lock configuration: %w", err)
+		if err == pgx.ErrNoRows {
+			return ErrNotFound
+		}
+		return err
 	}
 
 	// Archive current configuration before updating
@@ -107,7 +115,7 @@ func (s *postgresRepo) UpdatePackSizes(ctx context.Context, sizes []int, updated
 		FROM pack_configuration
 		WHERE id = 1`)
 	if err != nil {
-		return fmt.Errorf("failed to archive configuration: %w", err)
+		return err
 	}
 
 	// Update configuration with new sizes and increment version
@@ -119,12 +127,12 @@ func (s *postgresRepo) UpdatePackSizes(ctx context.Context, sizes []int, updated
 		    updated_by = $2
 		WHERE id = 1`, sizes, updatedBy)
 	if err != nil {
-		return fmt.Errorf("failed to update configuration: %w", err)
+		return err
 	}
 
 	// Commit transaction
 	if err = tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return err
 	}
 
 	return nil
@@ -148,7 +156,7 @@ func (s *postgresRepo) GetPackConfigurationHistory(ctx context.Context, limit in
 		ORDER BY created_at DESC 
 		LIMIT $1`, limit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query configuration history: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -166,7 +174,7 @@ func (s *postgresRepo) GetPackConfigurationHistory(ctx context.Context, limit in
 			&cfg.UpdatedBy,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan history row: %w", err)
+			return nil, err
 		}
 
 		cfg.UpdatedAt = createdAt.Time
@@ -174,7 +182,7 @@ func (s *postgresRepo) GetPackConfigurationHistory(ctx context.Context, limit in
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating history rows: %w", err)
+		return nil, err
 	}
 
 	return configs, nil

@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nsaltun/packman/config"
+	"github.com/nsaltun/packman/internal/middleware"
 )
 
 // Server wraps the HTTP server with Gin router
@@ -27,9 +28,11 @@ func NewServer(httpHandler HttpHandler, cfg config.HttpConfig) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
-	// Add middleware
-	router.Use(gin.Recovery())
-	router.Use(gin.Logger())
+	// Add middleware (order matters!)
+	router.Use(middleware.RequestID())    // 1. Generate request ID first
+	router.Use(gin.Logger())              // 2. Use Gin's built-in logger
+	router.Use(gin.Recovery())            // 3. Recover from panics
+	router.Use(middleware.ErrorHandler()) // 4. Handle errors and format responses
 
 	// Create HTTP handler and register routes
 	httpHandler.registerRoutes(router)
