@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-up docker-down docker-logs docker-clean fmt lint
+.PHONY: help build run test clean docker-up docker-down docker-logs docker-clean postgres-up fmt lint
 
 # Variables
 APP_NAME=packman
@@ -14,6 +14,7 @@ help:
 	@echo "  make docker-down    - Stop all services"
 	@echo "  make docker-logs    - Show docker-compose logs"
 	@echo "  make docker-clean   - Stop services and remove volumes"
+	@echo "  make postgres-up    - Start PostgreSQL service"
 	@echo "  make fmt            - Format Go code"
 	@echo "  make lint           - Run golangci-lint (if installed)"
 
@@ -65,6 +66,11 @@ docker-clean:
 	@echo "Stopping services and removing volumes..."
 	@docker compose down -v
 	@echo "Docker cleanup complete"
+
+postgres-up:
+	@echo "Starting PostgreSQL service..."
+	@docker compose up -d postgres
+	@echo "PostgreSQL started successfully"
 
 # Format Go code
 fmt:

@@ -15,12 +15,7 @@ type PostgresClient struct {
 
 // NewClient creates a new PostgreSQL connection with pooling
 func NewClient(ctx context.Context, cfg config.DatabaseConfig) (*PostgresClient, error) {
-	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Database, cfg.SSLMode,
-	)
-
-	db, err := sqlx.ConnectContext(ctx, "postgres", dsn)
+	db, err := sqlx.ConnectContext(ctx, "postgres", cfg.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

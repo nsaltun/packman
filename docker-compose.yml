@@ -25,12 +25,10 @@ services:
     container_name: packman-app
     environment:
       PORT: 8080
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: packman
-      DB_PASSWORD: packman123
-      DB_NAME: packman
-      DB_SSLMODE: disable
+      DATABASE_URL: postgres://packman:packman123@postgres:5432/packman?sslmode=disable
+      DB_MAX_OPEN_CONNS: 25
+      DB_MAX_IDLE_CONNS: 25
+      DB_CONN_MAX_LIFETIME: 5m
     ports:
       - "8080:8080"
     depends_on:

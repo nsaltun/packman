@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
@@ -19,19 +20,14 @@ type HttpConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host            string        `env:"DB_HOST" envDefault:"localhost"`
-	Port            int           `env:"DB_PORT" envDefault:"5432"`
-	User            string        `env:"DB_USER" envDefault:"postgres"`
-	Password        string        `env:"DB_PASSWORD" envDefault:"password"`
-	Database        string        `env:"DB_NAME" envDefault:"postgres"`
-	SSLMode         string        `env:"DB_SSLMODE" envDefault:"disable"`
+	URL             string        `env:"DATABASE_URL"`
 	MaxOpenConns    int           `env:"DB_MAX_OPEN_CONNS" envDefault:"25"`
 	MaxIdleConns    int           `env:"DB_MAX_IDLE_CONNS" envDefault:"25"`
 	ConnMaxLifetime time.Duration `env:"DB_CONN_MAX_LIFETIME" envDefault:"5m"`
 }
 
 // NewConfig returns a new instance of Config
-func NewConfig() *Config {
+func NewConfig() (*Config, error) {
 	vi := viper.New()
 
 	// Set config file name and type
@@ -57,18 +53,24 @@ func NewConfig() *Config {
 	vi.SetDefault("HTTP_WRITE_TIMEOUT", "10s")
 	vi.SetDefault("HTTP_IDLE_TIMEOUT", "60s")
 
-	// Set defaults for database
-	vi.SetDefault("DB_HOST", "localhost")
-	vi.SetDefault("DB_PORT", 5432)
-	vi.SetDefault("DB_USER", "postgres")
-	vi.SetDefault("DB_PASSWORD", "password")
-	vi.SetDefault("DB_NAME", "postgres")
-	vi.SetDefault("DB_SSLMODE", "disable")
+	// Set defaults for database connection pool
 	vi.SetDefault("DB_MAX_OPEN_CONNS", 25)
 	vi.SetDefault("DB_MAX_IDLE_CONNS", 25)
 	vi.SetDefault("DB_CONN_MAX_LIFETIME", "5m")
 
-	// Load environment variables into struct
+	// Load database configuration from DATABASE_URL
+	databaseURL := vi.GetString("DATABASE_URL")
+	if databaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL environment variable is required")
+	}
+
+	dbConfig := DatabaseConfig{
+		URL:             databaseURL,
+		MaxOpenConns:    vi.GetInt("DB_MAX_OPEN_CONNS"),
+		MaxIdleConns:    vi.GetInt("DB_MAX_IDLE_CONNS"),
+		ConnMaxLifetime: vi.GetDuration("DB_CONN_MAX_LIFETIME"),
+	}
+
 	return &Config{
 		HTTP: HttpConfig{
 			Port:         vi.GetString("PORT"),
@@ -76,16 +78,6 @@ func NewConfig() *Config {
 			WriteTimeout: vi.GetDuration("HTTP_WRITE_TIMEOUT"),
 			IdleTimeout:  vi.GetDuration("HTTP_IDLE_TIMEOUT"),
 		},
-		Database: DatabaseConfig{
-			Host:            vi.GetString("DB_HOST"),
-			Port:            vi.GetInt("DB_PORT"),
-			User:            vi.GetString("DB_USER"),
-			Password:        vi.GetString("DB_PASSWORD"),
-			Database:        vi.GetString("DB_NAME"),
-			SSLMode:         vi.GetString("DB_SSLMODE"),
-			MaxOpenConns:    vi.GetInt("DB_MAX_OPEN_CONNS"),
-			MaxIdleConns:    vi.GetInt("DB_MAX_IDLE_CONNS"),
-			ConnMaxLifetime: vi.GetDuration("DB_CONN_MAX_LIFETIME"),
-		},
-	}
+		Database: dbConfig,
+	}, nil
 }

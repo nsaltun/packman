@@ -16,8 +16,12 @@ import (
 
 func main() {
 	//TODO: load config from file/env
-	cfg := config.NewConfig()
+	cfg, err := config.NewConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
 
+	//Initialize logger
 	//TODO: implement log LEVEL from config
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
