@@ -41,7 +41,7 @@ func TestGetPackSizes(t *testing.T) {
 			inRepo:  nil,
 			repoErr: fmt.Errorf("database error"),
 			wantErrorAssert: func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool {
-				return assert.EqualError(t, err, "database error", msgAndArgs...)
+				return assert.EqualError(t, err, "INTERNAL_ERROR: Failed to retrieve pack configuration (internal: database error)", msgAndArgs...)
 			},
 		},
 	}

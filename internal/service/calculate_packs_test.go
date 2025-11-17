@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/nsaltun/packman/internal/apperror"
 	"github.com/nsaltun/packman/internal/mocks"
 	"github.com/nsaltun/packman/internal/model"
+	"github.com/nsaltun/packman/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -66,12 +68,6 @@ func TestCalculatePacks(t *testing.T) {
 			},
 		},
 		{
-			name:      "pack sizes empty",
-			packSizes: []int{},
-			quantity:  100,
-			wantErr:   fmt.Errorf("pack sizes empty. Cannot calculate packs"),
-		},
-		{
 			name:      "edge case",
 			packSizes: []int{23, 31, 53},
 			quantity:  500000,
@@ -85,11 +81,24 @@ func TestCalculatePacks(t *testing.T) {
 			},
 		},
 		{
+			name:      "pack sizes empty",
+			packSizes: []int{},
+			quantity:  100,
+			wantErr:   apperror.InternalError("Pack sizes configuration is empty", nil),
+		},
+		{
 			name:      "repository error",
 			packSizes: nil,
 			quantity:  1000,
 			repoErr:   fmt.Errorf("database error"),
-			wantErr:   fmt.Errorf("database error"),
+			wantErr:   apperror.InternalError("Failed to retrieve pack sizes", fmt.Errorf("database error")),
+		},
+		{
+			name:      "repository notfound error",
+			packSizes: nil,
+			quantity:  1000,
+			repoErr:   repository.ErrNotFound,
+			wantErr:   apperror.NotFoundError("Pack configuration not found", repository.ErrNotFound),
 		},
 	}
 
