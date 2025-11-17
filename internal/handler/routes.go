@@ -4,10 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 	"github.com/nsaltun/packman/internal/model"
 	"github.com/nsaltun/packman/internal/service"
-	"github.com/nsaltun/packman/pkg/postgres"
+	"github.com/nsaltun/packman/pkg/postgres" // for health check
 )
 
 // PackHttpHandler defines the interface for pack-related HTTP handlers
@@ -27,14 +26,14 @@ type HttpHandler interface {
 // httpHandler is the concrete implementation of HttpHandler
 type httpHandler struct {
 	packService service.PackService
-	db          *sqlx.DB
+	pgClient    *postgres.Client // for health check
 }
 
 // NewHTTPHandler creates a new HTTP handler with the given services
-func NewHTTPHandler(packService service.PackService, db *sqlx.DB) HttpHandler {
+func NewHTTPHandler(packService service.PackService, pgClient *postgres.Client) HttpHandler {
 	return &httpHandler{
 		packService: packService,
-		db:          db,
+		pgClient:    pgClient, // for health check
 	}
 }
 
@@ -111,8 +110,7 @@ func (h *httpHandler) UpdatePackSizes(c *gin.Context) {
 
 // Health handles the health check endpoint
 func (h *httpHandler) Health(c *gin.Context) {
-	dbHealth := postgres.CheckHealth(c.Request.Context(), h.db)
-
+	dbHealth := h.pgClient.CheckHealth(c.Request.Context())
 	statusCode := http.StatusOK
 	if dbHealth.Status != "healthy" {
 		statusCode = http.StatusServiceUnavailable
@@ -124,6 +122,12 @@ func (h *httpHandler) Health(c *gin.Context) {
 			"status":           dbHealth.Status,
 			"response_time_ms": dbHealth.ResponseTime.Milliseconds(),
 			"error":            dbHealth.Error,
+		},
+		"connection_pool": gin.H{
+			"total_conns":    dbHealth.PoolStats.TotalConns,
+			"acquired_conns": dbHealth.PoolStats.AcquiredConns,
+			"idle_conns":     dbHealth.PoolStats.IdleConns,
+			"max_conns":      dbHealth.PoolStats.MaxConns,
 		},
 	})
 }

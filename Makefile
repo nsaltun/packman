@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-up docker-down docker-logs docker-clean postgres-up fmt lint
+.PHONY: help build run test clean docker-up docker-down docker-logs docker-clean postgres-up fmt lint migrate migrate_down
 
 # Variables
 APP_NAME=packman
@@ -17,6 +17,8 @@ help:
 	@echo "  make postgres-up    - Start PostgreSQL service"
 	@echo "  make fmt            - Format Go code"
 	@echo "  make lint           - Run golangci-lint (if installed)"
+	@echo "  make migrate        - Run database migrations"
+	@echo "  make migrate_down   - Down database migrations"
 
 # Build the Go application
 build:
@@ -86,3 +88,11 @@ lint:
 	else \
 		echo "golangci-lint not installed. Install with: brew install golangci-lint"; \
 	fi
+
+## migrate: runs the the migrations
+migrate:
+	docker compose run migrator up
+
+## migrate_down: downs the migration
+migrate_down:
+	docker compose run migrator down

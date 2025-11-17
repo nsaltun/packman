@@ -26,7 +26,7 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	// Initialize postgres client
+	// Initialize postgres client with connection pool
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -34,21 +34,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer postgres.Close(pgClient.DB)
+	defer pgClient.Close()
 
-	slog.Info("Successfully connected to database")
-
-	// TODO: Run migrations when we have migration files
-	// if err := postgres.RunMigrations(pgClient.DB, migrations, "migrations"); err != nil {
-	// 	log.Fatalf("Failed to run migrations: %v", err)
-	// }
-
-	packRepo := repository.NewPostgresRepo(pgClient.DB)
+	packRepo := repository.NewPostgresRepo(pgClient.Pool)
 	packService := service.NewPackService(packRepo)
 
 	// Register routes and create HTTP handler
-	//TODO: make better healthcheck. Don't send it to DB client in handler
-	handlr := handler.NewHTTPHandler(packService, pgClient.DB)
+	handlr := handler.NewHTTPHandler(packService, pgClient)
 
 	// Start server and handle graceful shutdown
 	server := handler.NewServer(handlr, cfg.HTTP)

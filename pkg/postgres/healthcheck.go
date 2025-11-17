@@ -4,24 +4,25 @@ import (
 	"context"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type HealthStatus struct {
 	Status       string        `json:"status"`
 	ResponseTime time.Duration `json:"response_time_ms"`
 	Error        string        `json:"error,omitempty"`
+	PoolStats    *pgxpool.Stat `json:"pool_stats,omitempty"`
 }
 
-// CheckHealth performs a database health check
-func CheckHealth(ctx context.Context, db *sqlx.DB) HealthStatus {
+// CheckHealth performs a health check on the PostgreSQL database
+func (c *Client) CheckHealth(ctx context.Context) HealthStatus {
 	start := time.Now()
 
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	var result int
-	err := db.GetContext(ctx, &result, "SELECT 1")
+	// Using Pool.Ping() which is more efficient than a SELECT 1 query
+	err := c.Pool.Ping(ctx)
 
 	elapsed := time.Since(start)
 
@@ -30,11 +31,13 @@ func CheckHealth(ctx context.Context, db *sqlx.DB) HealthStatus {
 			Status:       "unhealthy",
 			ResponseTime: elapsed,
 			Error:        err.Error(),
+			PoolStats:    c.Pool.Stat(),
 		}
 	}
 
 	return HealthStatus{
 		Status:       "healthy",
 		ResponseTime: elapsed,
+		PoolStats:    c.Pool.Stat(),
 	}
 }

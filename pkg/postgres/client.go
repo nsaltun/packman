@@ -3,37 +3,66 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"time"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nsaltun/packman/config"
 )
 
-type PostgresClient struct {
-	DB *sqlx.DB
+// Client wraps pgxpool with observability and best practices
+type Client struct {
+	Pool *pgxpool.Pool
 }
 
-// NewClient creates a new PostgreSQL connection with pooling
-func NewClient(ctx context.Context, cfg config.DatabaseConfig) (*PostgresClient, error) {
-	db, err := sqlx.ConnectContext(ctx, "postgres", cfg.URL)
+// NewClient creates a production-ready pgx connection pool with observability
+func NewClient(ctx context.Context, cfg config.DatabaseConfig) (*Client, error) {
+	start := time.Now()
+
+	// Build pgx pool config with best practices
+	poolCfg, err := pgxpool.ParseConfig(cfg.URL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, fmt.Errorf("failed to parse database URL: %w", err)
 	}
 
-	// Configure connection pool
-	db.SetMaxOpenConns(cfg.MaxOpenConns)
-	db.SetMaxIdleConns(cfg.MaxIdleConns)
-	db.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+	poolCfg.MaxConns = int32(cfg.MaxOpenConns)
+	poolCfg.MinConns = int32(cfg.MaxIdleConns)
+	poolCfg.MaxConnLifetime = cfg.ConnMaxLifetime
+	poolCfg.MaxConnIdleTime = cfg.MaxConnIdleTime
+	poolCfg.HealthCheckPeriod = cfg.HealthCheckPeriod
 
-	// Verify connection
-	if err := db.PingContext(ctx); err != nil {
+	// Add connection lifecycle hooks for observability
+	poolCfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		slog.Debug("new database connection established",
+			slog.String("remote_addr", conn.Config().Host))
+		return nil
+	}
+
+	// Create pool
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection pool: %w", err)
+	}
+
+	// Verify connectivity
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	return &PostgresClient{DB: db}, nil
+	slog.Info("PostgreSQL connection pool established",
+		slog.Duration("duration", time.Since(start)),
+		slog.Int("max_conns", cfg.MaxOpenConns),
+		slog.Int("min_conns", cfg.MaxIdleConns),
+		slog.Duration("max_lifetime", cfg.ConnMaxLifetime),
+	)
+
+	return &Client{Pool: pool}, nil
 }
 
-// Close closes the database connection
-func Close(db *sqlx.DB) error {
-	return db.Close()
+// Close gracefully shuts down the connection pool
+func (c *Client) Close() {
+	slog.Info("closing database connection pool")
+	c.Pool.Close()
 }
