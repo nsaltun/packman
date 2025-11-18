@@ -104,6 +104,8 @@ func (s *packService) GetPackSizes(ctx context.Context) (*model.GetPackSizesResp
 
 // UpdatePackSizes updates the pack sizes in the repository and returns the updated configuration
 func (s *packService) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) (*model.UpdatePackSizesResponse, error) {
+	sort.Ints(sizes)
+
 	res, err := s.packRepo.UpdatePackSizes(ctx, sizes, updatedBy)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
