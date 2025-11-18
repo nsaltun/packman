@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -116,6 +118,24 @@ func (h *httpHandler) Health(c *gin.Context) {
 	statusCode := http.StatusOK
 	if dbHealth.Status != "healthy" {
 		statusCode = http.StatusServiceUnavailable
+
+		// Log health check failure with stack trace
+		requestID, _ := c.Get("request_id")
+		slog.Error("health check failed",
+			slog.String("request_id", fmt.Sprintf("%v", requestID)),
+			slog.String("error", dbHealth.Error),
+			slog.Int64("response_time_ms", dbHealth.ResponseTime.Milliseconds()),
+		)
+	}
+
+	var poolStats gin.H
+	if dbHealth.PoolStats != nil {
+		poolStats = gin.H{
+			"total_conns":    dbHealth.PoolStats.TotalConns(),
+			"acquired_conns": dbHealth.PoolStats.AcquiredConns(),
+			"idle_conns":     dbHealth.PoolStats.IdleConns(),
+			"max_conns":      dbHealth.PoolStats.MaxConns(),
+		}
 	}
 
 	c.JSON(statusCode, gin.H{
@@ -125,11 +145,6 @@ func (h *httpHandler) Health(c *gin.Context) {
 			"response_time_ms": dbHealth.ResponseTime.Milliseconds(),
 			"error":            dbHealth.Error,
 		},
-		"connection_pool": gin.H{
-			"total_conns":    dbHealth.PoolStats.TotalConns,
-			"acquired_conns": dbHealth.PoolStats.AcquiredConns,
-			"idle_conns":     dbHealth.PoolStats.IdleConns,
-			"max_conns":      dbHealth.PoolStats.MaxConns,
-		},
+		"connection_pool": poolStats,
 	})
 }

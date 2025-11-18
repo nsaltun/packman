@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -28,7 +29,8 @@ func ErrorHandler() gin.HandlerFunc {
 						slog.String("request_id", requestID.(string)),
 						slog.String("code", string(appErr.Code)),
 						slog.String("message", appErr.Message),
-						slog.Any("internal", appErr.Internal), // This is logged but not exposed
+						slog.String("error", fmt.Sprintf("%+v", err)), // %+v includes stack trace if available
+						slog.Any("internal", appErr.Internal),         // This is logged but not exposed
 					)
 				} else {
 					slog.Warn("client error",
@@ -42,9 +44,9 @@ func ErrorHandler() gin.HandlerFunc {
 				response.FromAppError(c, appErr)
 			} else {
 				// Unknown error - log and return generic error
-				slog.Error("unhandled error",
+				slog.ErrorContext(c, "unhandled error",
 					slog.String("request_id", requestID.(string)),
-					slog.String("error", err.Error()),
+					slog.String("error", fmt.Sprintf("%+v", err)), // %+v includes stack trace if available
 				)
 
 				response.Error(c, http.StatusInternalServerError,

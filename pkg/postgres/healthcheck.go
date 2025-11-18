@@ -21,7 +21,7 @@ func (c *Client) CheckHealth(ctx context.Context) HealthStatus {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	// Using Pool.Ping() which is more efficient than a SELECT 1 query
+	// ping the database to check connectivity
 	err := c.Pool.Ping(ctx)
 
 	elapsed := time.Since(start)
