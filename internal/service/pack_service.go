@@ -57,7 +57,7 @@ func (s *packService) CalculatePacks(ctx context.Context, quantity int) (*model.
 	minPackSize := packSizes[len(packSizes)-1]
 
 	// greedy algorithm to find the combination of packs
-	packsNumberResult := make(map[int]int, 0)
+	packsNumberResult := make(map[int]int)
 	// iterate over pack sizes
 	for _, packSize := range packSizes {
 		// if quantity is zero, break
@@ -71,13 +71,13 @@ func (s *packService) CalculatePacks(ctx context.Context, quantity int) (*model.
 			// update result map
 			packsNumberResult[packSize] = numPacks
 			// update remaining quantity
-			quantity -= numPacks * packSize
+			quantity = quantity % packSize
 		}
 	}
 
 	// if there is remaining quantity less than the smallest pack size, add one smallest pack
 	if quantity > 0 {
-		packsNumberResult[minPackSize] += 1
+		packsNumberResult[minPackSize]++
 	}
 
 	// return result
