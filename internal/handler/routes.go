@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +8,6 @@ import (
 	"github.com/nsaltun/packman/internal/model"
 	"github.com/nsaltun/packman/internal/response"
 	"github.com/nsaltun/packman/internal/service"
-	"github.com/nsaltun/packman/pkg/postgres" // for health check
 )
 
 // PackHttpHandler defines the interface for pack-related HTTP handlers
@@ -23,21 +20,18 @@ type PackHttpHandler interface {
 // HttpHandler defines the interface for HTTP handlers
 type HttpHandler interface {
 	PackHttpHandler
-	Health(c *gin.Context)
 	registerRoutes(r *gin.Engine)
 }
 
 // httpHandler is the concrete implementation of HttpHandler
 type httpHandler struct {
 	packService service.PackService
-	pgClient    *postgres.Client // for health check
 }
 
 // NewHTTPHandler creates a new HTTP handler with the given services
-func NewHTTPHandler(packService service.PackService, pgClient *postgres.Client) HttpHandler {
+func NewHTTPHandler(packService service.PackService) HttpHandler {
 	return &httpHandler{
 		packService: packService,
-		pgClient:    pgClient, // for health check
 	}
 }
 
@@ -49,7 +43,6 @@ func (h *httpHandler) registerRoutes(r *gin.Engine) {
 		packs.GET("/pack-sizes", h.GetPackSizes)
 		packs.PUT("/pack-sizes", h.UpdatePackSizes)
 	}
-	r.GET("/health", h.Health)
 }
 
 // CalculatePacks handles the calculation of packs for a given quantity
@@ -110,41 +103,4 @@ func (h *httpHandler) UpdatePackSizes(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, gin.H{"message": "Pack sizes updated successfully"})
-}
-
-// Health handles the health check endpoint
-func (h *httpHandler) Health(c *gin.Context) {
-	dbHealth := h.pgClient.CheckHealth(c.Request.Context())
-	statusCode := http.StatusOK
-	if dbHealth.Status != "healthy" {
-		statusCode = http.StatusServiceUnavailable
-
-		// Log health check failure with stack trace
-		requestID, _ := c.Get("request_id")
-		slog.Error("health check failed",
-			slog.String("request_id", fmt.Sprintf("%v", requestID)),
-			slog.String("error", dbHealth.Error),
-			slog.Int64("response_time_ms", dbHealth.ResponseTime.Milliseconds()),
-		)
-	}
-
-	var poolStats gin.H
-	if dbHealth.PoolStats != nil {
-		poolStats = gin.H{
-			"total_conns":    dbHealth.PoolStats.TotalConns(),
-			"acquired_conns": dbHealth.PoolStats.AcquiredConns(),
-			"idle_conns":     dbHealth.PoolStats.IdleConns(),
-			"max_conns":      dbHealth.PoolStats.MaxConns(),
-		}
-	}
-
-	c.JSON(statusCode, gin.H{
-		"status": dbHealth.Status,
-		"database": gin.H{
-			"status":           dbHealth.Status,
-			"response_time_ms": dbHealth.ResponseTime.Milliseconds(),
-			"error":            dbHealth.Error,
-		},
-		"connection_pool": poolStats,
-	})
 }

@@ -45,11 +45,12 @@ func main() {
 	packRepo := repository.NewPostgresRepo(pgClient.Pool)
 	packService := service.NewPackService(packRepo)
 
-	// Register routes and create HTTP handler
-	handlr := handler.NewHTTPHandler(packService, pgClient)
+	// Create handlers
+	packHandler := handler.NewHTTPHandler(packService)
+	healthHandler := handler.NewHealthHandler(pgClient)
 
 	// Start server and handle graceful shutdown
-	server := handler.NewServer(handlr, cfg.HTTP)
+	server := handler.NewServer(packHandler, healthHandler, cfg.HTTP)
 	if err := server.Run(); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}

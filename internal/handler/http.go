@@ -23,7 +23,7 @@ type Server struct {
 }
 
 // NewServer creates and configures a new HTTP server
-func NewServer(httpHandler HttpHandler, cfg config.HttpConfig) *Server {
+func NewServer(httpHandler HttpHandler, healthHandler HealthHandler, cfg config.HttpConfig) *Server {
 	// Setup Gin router
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
@@ -34,8 +34,9 @@ func NewServer(httpHandler HttpHandler, cfg config.HttpConfig) *Server {
 	router.Use(gin.Recovery())            // 3. Recover from panics
 	router.Use(middleware.ErrorHandler()) // 4. Handle errors and format responses
 
-	// Create HTTP handler and register routes
+	// Register routes
 	httpHandler.registerRoutes(router)
+	router.GET("/health", healthHandler.Check)
 
 	// Configure HTTP server with timeouts
 	httpServer := &http.Server{
