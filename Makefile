@@ -50,7 +50,7 @@ docker-up:
 	@echo "Starting services with docker-compose..."
 	@docker compose up -d --build
 	@echo "Services started successfully"
-	@echo "Application: http://localhost:8080"
+	@echo "Application: http://localhost:8081"
 	@echo "PostgreSQL: localhost:5432"
 
 # Stop all services

@@ -125,7 +125,7 @@ This endpoint implements an intelligent pack calculation algorithm that:
 
 **Example 1: Simple calculation**
 ```bash
-curl -X POST http://localhost:8080/api/v1/calculate \
+curl -X POST http://localhost:8081/api/v1/calculate \
   -H "Content-Type: application/json" \
   -d '{"quantity": 251}'
 ```
@@ -145,7 +145,7 @@ Response:
 
 **Example 2: Multiple pack sizes**
 ```bash
-curl -X POST http://localhost:8080/api/v1/calculate \
+curl -X POST http://localhost:8081/api/v1/calculate \
   -H "Content-Type: application/json" \
   -d '{"quantity": 12001}'
 ```
@@ -249,7 +249,7 @@ Returns the active pack sizes configuration used by the pack calculation algorit
 #### Example
 
 ```bash
-curl -X GET http://localhost:8080/api/v1/pack-sizes
+curl -X GET http://localhost:8081/api/v1/pack-sizes
 ```
 
 #### Error Responses
@@ -330,7 +330,7 @@ Updates the available pack sizes used for order fulfillment calculations. This e
 
 **Basic update**
 ```bash
-curl -X PUT http://localhost:8080/api/v1/pack-sizes \
+curl -X PUT http://localhost:8081/api/v1/pack-sizes \
   -H "Content-Type: application/json" \
   -d '{
     "pack_sizes": [250, 500, 1000, 2000, 5000],
@@ -467,7 +467,7 @@ Returns the operational status of the service and its database connection. This 
 #### Example
 
 ```bash
-curl -X GET http://localhost:8080/health
+curl -X GET http://localhost:8081/health
 ```
 
 
@@ -489,7 +489,7 @@ The API uses URL path versioning (e.g., `/api/v1/`). Breaking changes will resul
 
 ```javascript
 try {
-  const response = await fetch('http://localhost:8080/api/v1/calculate', {
+  const response = await fetch('http://localhost:8081/api/v1/calculate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ quantity: 250 })

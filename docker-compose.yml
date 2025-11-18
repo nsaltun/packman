@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile
     container_name: packman-app
     environment:
-      PORT: 8080
+      PORT: 8081
       DATABASE_URL: postgres://packman:packman123@postgres:5432/packman?sslmode=disable
       DB_MAX_OPEN_CONNS: 20
       DB_MAX_IDLE_CONNS: 5
@@ -32,7 +32,7 @@ services:
       DB_CONN_MAX_IDLE_TIME: 5m
       DB_HEALTH_CHECK_PERIOD: 1m
     ports:
-      - "8080:8080"
+      - "8081:8081"
     depends_on:
       - postgres
       - migrator

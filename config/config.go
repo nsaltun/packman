@@ -15,7 +15,7 @@ type Config struct {
 
 // HttpConfig holds the HTTP server settings
 type HttpConfig struct {
-	Port         string        `env:"PORT" envDefault:"8080"`
+	Port         string        `env:"PORT" envDefault:"8081"`
 	ReadTimeout  time.Duration `env:"HTTP_READ_TIMEOUT" envDefault:"10s"`
 	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT" envDefault:"10s"`
 	IdleTimeout  time.Duration `env:"HTTP_IDLE_TIMEOUT" envDefault:"60s"`
@@ -64,7 +64,7 @@ func NewConfig() (*Config, error) {
 	vi.AutomaticEnv()
 
 	// Set defaults for HTTP server
-	vi.SetDefault("PORT", "8080")
+	vi.SetDefault("PORT", "8081")
 	vi.SetDefault("HTTP_READ_TIMEOUT", "10s")
 	vi.SetDefault("HTTP_WRITE_TIMEOUT", "10s")
 	vi.SetDefault("HTTP_IDLE_TIMEOUT", "60s")
