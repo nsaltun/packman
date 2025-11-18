@@ -26,6 +26,14 @@ type UpdatePackSizesRequest struct {
 	UpdatedBy string `json:"updated_by,omitempty"`
 }
 
+// UpdatePackSizesResponse represents the response for updating pack sizes
+type UpdatePackSizesResponse struct {
+	PackSizes []int     `json:"pack_sizes"`
+	Version   int       `json:"version"`
+	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedBy string    `json:"updated_by,omitempty"`
+}
+
 // PackConfiguration represents the current pack size configuration
 type PackConfiguration struct {
 	ID        int       `json:"id" db:"id"`

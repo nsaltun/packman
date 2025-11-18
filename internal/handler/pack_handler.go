@@ -96,10 +96,10 @@ func (h *packHTTPHandler) UpdatePackSizes(c *gin.Context) {
 	req.PackSizes = sets.DeduplicateIntSlice(req.PackSizes)
 
 	// call service to update pack sizes
-	err := h.packService.UpdatePackSizes(c.Request.Context(), req.PackSizes, req.UpdatedBy)
+	res, err := h.packService.UpdatePackSizes(c.Request.Context(), req.PackSizes, req.UpdatedBy)
 	if err != nil {
 		_ = c.Error(err) // Pass through AppError from service/repo
 		return
 	}
-	response.Success(c, http.StatusOK, gin.H{"message": "Pack sizes updated successfully"})
+	response.Success(c, http.StatusOK, res)
 }

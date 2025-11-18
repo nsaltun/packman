@@ -31,9 +31,12 @@ func (m *MockPackRepository) GetPackConfiguration(ctx context.Context) (*model.P
 }
 
 // UpdatePackSizes mocks the UpdatePackSizes method
-func (m *MockPackRepository) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error {
+func (m *MockPackRepository) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) (*model.PackConfiguration, error) {
 	args := m.Called(ctx, sizes, updatedBy)
-	return args.Error(0)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.PackConfiguration), args.Error(1)
 }
 
 // GetPackConfigurationHistory mocks the GetPackConfigurationHistory method
