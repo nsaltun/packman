@@ -46,7 +46,7 @@ func main() {
 	packService := service.NewPackService(packRepo)
 
 	// Create handlers
-	packHandler := handler.NewHTTPHandler(packService)
+	packHandler := handler.NewPackHTTPHandler(packService)
 	healthHandler := handler.NewHealthHandler(pgClient)
 
 	// Start server and handle graceful shutdown

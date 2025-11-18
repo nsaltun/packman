@@ -10,33 +10,28 @@ import (
 	"github.com/nsaltun/packman/internal/service"
 )
 
-// PackHttpHandler defines the interface for pack-related HTTP handlers
-type PackHttpHandler interface {
+// PackHTTPHandler defines the interface for pack-related HTTP handlers
+type PackHTTPHandler interface {
+	registerRoutes(r *gin.Engine)
 	CalculatePacks(c *gin.Context)
 	GetPackSizes(c *gin.Context)
 	UpdatePackSizes(c *gin.Context)
 }
 
-// HttpHandler defines the interface for HTTP handlers
-type HttpHandler interface {
-	PackHTTPHandler
-	registerRoutes(r *gin.Engine)
-}
-
-// httpHandler is the concrete implementation of HttpHandler
-type httpHandler struct {
+// packHTTPHandler is the concrete implementation of PackHTTPHandler
+type packHTTPHandler struct {
 	packService service.PackService
 }
 
-// NewHTTPHandler creates a new HTTP handler with the given services
-func NewHTTPHandler(packService service.PackService) HttpHandler {
-	return &httpHandler{
+// NewPackHTTPHandler creates a new HTTP handler with the given services
+func NewPackHTTPHandler(packService service.PackService) PackHTTPHandler {
+	return &packHTTPHandler{
 		packService: packService,
 	}
 }
 
 // registerRoutes registers all routes for the HTTP handler
-func (h *httpHandler) registerRoutes(r *gin.Engine) {
+func (h *packHTTPHandler) registerRoutes(r *gin.Engine) {
 	packs := r.Group("/api/v1")
 	{
 		packs.POST("/calculate", h.CalculatePacks)
@@ -46,7 +41,7 @@ func (h *httpHandler) registerRoutes(r *gin.Engine) {
 }
 
 // CalculatePacks handles the calculation of packs for a given quantity
-func (h *httpHandler) CalculatePacks(c *gin.Context) {
+func (h *packHTTPHandler) CalculatePacks(c *gin.Context) {
 	var req model.PackCalculationRequest
 	// bind JSON request
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -72,7 +67,7 @@ func (h *httpHandler) CalculatePacks(c *gin.Context) {
 }
 
 // GetPackSizes handles retrieving the current pack sizes
-func (h *httpHandler) GetPackSizes(c *gin.Context) {
+func (h *packHTTPHandler) GetPackSizes(c *gin.Context) {
 	// call service to get pack sizes
 	res, err := h.packService.GetPackSizes(c.Request.Context())
 	if err != nil {
@@ -83,7 +78,7 @@ func (h *httpHandler) GetPackSizes(c *gin.Context) {
 }
 
 // UpdatePackSizes handles updating the pack sizes
-func (h *httpHandler) UpdatePackSizes(c *gin.Context) {
+func (h *packHTTPHandler) UpdatePackSizes(c *gin.Context) {
 	var req model.UpdatePackSizesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(apperror.BadRequestError("Invalid request format", err))
