@@ -19,6 +19,17 @@ type HttpConfig struct {
 	ReadTimeout  time.Duration `env:"HTTP_READ_TIMEOUT" envDefault:"10s"`
 	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT" envDefault:"10s"`
 	IdleTimeout  time.Duration `env:"HTTP_IDLE_TIMEOUT" envDefault:"60s"`
+	CORS         CORSConfig
+}
+
+// CORSConfig holds CORS settings
+type CORSConfig struct {
+	AllowOrigins     []string      `env:"CORS_ALLOW_ORIGINS" envDefault:"*"`
+	AllowMethods     []string      `env:"CORS_ALLOW_METHODS" envDefault:"GET,POST,PUT,DELETE,OPTIONS"`
+	AllowHeaders     []string      `env:"CORS_ALLOW_HEADERS" envDefault:"Origin,Content-Type,Accept,Authorization"`
+	ExposeHeaders    []string      `env:"CORS_EXPOSE_HEADERS" envDefault:"Content-Length"`
+	AllowCredentials bool          `env:"CORS_ALLOW_CREDENTIALS" envDefault:"false"`
+	MaxAge           time.Duration `env:"CORS_MAX_AGE" envDefault:"12h"`
 }
 
 // DatabaseConfig holds the database connection settings
@@ -58,6 +69,14 @@ func NewConfig() (*Config, error) {
 	vi.SetDefault("HTTP_WRITE_TIMEOUT", "10s")
 	vi.SetDefault("HTTP_IDLE_TIMEOUT", "60s")
 
+	// Set defaults for CORS
+	vi.SetDefault("CORS_ALLOW_ORIGINS", "*")
+	vi.SetDefault("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS")
+	vi.SetDefault("CORS_ALLOW_HEADERS", "Origin,Content-Type,Accept,Authorization")
+	vi.SetDefault("CORS_EXPOSE_HEADERS", "Content-Length")
+	vi.SetDefault("CORS_ALLOW_CREDENTIALS", false)
+	vi.SetDefault("CORS_MAX_AGE", "12h")
+
 	// Set defaults for database connection pool
 	vi.SetDefault("DB_MAX_OPEN_CONNS", 20)
 	vi.SetDefault("DB_MAX_IDLE_CONNS", 5)
@@ -86,6 +105,14 @@ func NewConfig() (*Config, error) {
 			ReadTimeout:  vi.GetDuration("HTTP_READ_TIMEOUT"),
 			WriteTimeout: vi.GetDuration("HTTP_WRITE_TIMEOUT"),
 			IdleTimeout:  vi.GetDuration("HTTP_IDLE_TIMEOUT"),
+			CORS: CORSConfig{
+				AllowOrigins:     vi.GetStringSlice("CORS_ALLOW_ORIGINS"),
+				AllowMethods:     vi.GetStringSlice("CORS_ALLOW_METHODS"),
+				AllowHeaders:     vi.GetStringSlice("CORS_ALLOW_HEADERS"),
+				ExposeHeaders:    vi.GetStringSlice("CORS_EXPOSE_HEADERS"),
+				AllowCredentials: vi.GetBool("CORS_ALLOW_CREDENTIALS"),
+				MaxAge:           vi.GetDuration("CORS_MAX_AGE"),
+			},
 		},
 		Database: dbConfig,
 	}, nil

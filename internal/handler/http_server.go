@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/nsaltun/packman/config"
 	"github.com/nsaltun/packman/internal/app"
@@ -25,11 +26,22 @@ func NewServer(packHandler PackHTTPHandler, healthHandler HealthHandler, cfg con
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
+	// Configure CORS middleware
+	corsConfig := cors.Config{
+		AllowOrigins:     cfg.CORS.AllowOrigins,
+		AllowMethods:     cfg.CORS.AllowMethods,
+		AllowHeaders:     cfg.CORS.AllowHeaders,
+		ExposeHeaders:    cfg.CORS.ExposeHeaders,
+		AllowCredentials: cfg.CORS.AllowCredentials,
+		MaxAge:           cfg.CORS.MaxAge,
+	}
+
 	// Add middleware (order matters!)
-	router.Use(middleware.RequestID())    // 1. Generate request ID first
-	router.Use(gin.Logger())              // 2. Use Gin's built-in logger
-	router.Use(gin.Recovery())            // 3. Recover from panics
-	router.Use(middleware.ErrorHandler()) // 4. Handle errors and format responses
+	router.Use(cors.New(corsConfig))      // 1. CORS should be first
+	router.Use(middleware.RequestID())    // 2. Generate request ID
+	router.Use(gin.Logger())              // 3. Use Gin's built-in logger
+	router.Use(gin.Recovery())            // 4. Recover from panics
+	router.Use(middleware.ErrorHandler()) // 5. Handle errors and format responses
 
 	// Register routes
 	packHandler.registerRoutes(router)
