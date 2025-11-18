@@ -91,6 +91,9 @@ func (h *packHTTPHandler) UpdatePackSizes(c *gin.Context) {
 		return
 	}
 
+	//deduplicate pack sizes
+	req.PackSizes = deduplicateIntSlice(req.PackSizes)
+
 	// call service to update pack sizes
 	err := h.packService.UpdatePackSizes(c.Request.Context(), req.PackSizes, req.UpdatedBy)
 	if err != nil {
@@ -98,4 +101,16 @@ func (h *packHTTPHandler) UpdatePackSizes(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, gin.H{"message": "Pack sizes updated successfully"})
+}
+
+func deduplicateIntSlice(items []int) []int {
+	seen := make(map[int]struct{})
+	result := make([]int, 0, len(items))
+	for _, item := range items {
+		if _, ok := seen[item]; !ok {
+			seen[item] = struct{}{}
+			result = append(result, item)
+		}
+	}
+	return result
 }
