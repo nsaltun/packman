@@ -52,7 +52,7 @@ func (h *httpHandler) registerRoutes(r *gin.Engine) {
 
 // CalculatePacks handles the calculation of packs for a given quantity
 func (h *httpHandler) CalculatePacks(c *gin.Context) {
-	var req *model.PackCalculationRequest
+	var req model.PackCalculationRequest
 	// bind JSON request
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(apperror.BadRequestError("Invalid request format", err))
@@ -60,7 +60,7 @@ func (h *httpHandler) CalculatePacks(c *gin.Context) {
 	}
 
 	// validate request
-	if err := validateCalculatePacksRequest(req); err != nil {
+	if err := validateCalculatePacksRequest(&req); err != nil {
 		_ = c.Error(apperror.ValidationError(err.Error(), err))
 		return
 	}
@@ -89,14 +89,14 @@ func (h *httpHandler) GetPackSizes(c *gin.Context) {
 
 // UpdatePackSizes handles updating the pack sizes
 func (h *httpHandler) UpdatePackSizes(c *gin.Context) {
-	var req *model.UpdatePackSizesRequest
-	if err := c.ShouldBindJSON(req); err != nil {
+	var req model.UpdatePackSizesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(apperror.BadRequestError("Invalid request format", err))
 		return
 	}
 
 	// validate request
-	if err := validateUpdatePackSizesRequest(req); err != nil {
+	if err := validateUpdatePackSizesRequest(&req); err != nil {
 		_ = c.Error(apperror.ValidationError(err.Error(), err))
 		return
 	}
