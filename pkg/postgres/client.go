@@ -9,23 +9,30 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nsaltun/packman/config"
+	"github.com/nsaltun/packman/internal/app"
 )
 
 // Client wraps pgxpool with observability and best practices
 type Client struct {
+	app.AbstractComponent
 	Pool *pgxpool.Pool
 }
 
 // NewClient creates a production-ready pgx connection pool with observability
-func NewClient(ctx context.Context, cfg config.DatabaseConfig) (*Client, error) {
+func NewClient(cfg config.DatabaseConfig) (*Client, error) {
 	start := time.Now()
 
-	// Build pgx pool config with best practices
+	// Create context with timeout for initial connection
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Build pgx pool config
 	poolCfg, err := pgxpool.ParseConfig(cfg.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse database URL: %w", err)
 	}
 
+	// General pool settings
 	poolCfg.MaxConns = int32(cfg.MaxOpenConns)
 	poolCfg.MinConns = int32(cfg.MaxIdleConns)
 	poolCfg.MaxConnLifetime = cfg.ConnMaxLifetime
@@ -62,7 +69,8 @@ func NewClient(ctx context.Context, cfg config.DatabaseConfig) (*Client, error) 
 }
 
 // Close gracefully shuts down the connection pool
-func (c *Client) Close() {
-	slog.Info("closing database connection pool")
+func (c *Client) Close(ctx context.Context) error {
+	slog.InfoContext(ctx, "closing database connection pool")
 	c.Pool.Close()
+	return nil
 }

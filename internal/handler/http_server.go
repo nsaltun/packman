@@ -3,21 +3,18 @@ package handler
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nsaltun/packman/config"
+	"github.com/nsaltun/packman/internal/app"
 	"github.com/nsaltun/packman/internal/middleware"
 )
 
 // Server wraps the HTTP server with Gin router
 type Server struct {
+	app.AbstractComponent
 	cfg        config.HttpConfig
 	httpServer *http.Server
 }
@@ -53,34 +50,21 @@ func NewServer(packHandler PackHTTPHandler, healthHandler HealthHandler, cfg con
 	}
 }
 
-// Run starts the server and handles graceful shutdown
+// Run starts the HTTP server (blocks until shutdown)
 func (s *Server) Run() error {
-	// Start server in goroutine
-	go func() {
-		slog.Info("Starting server on ", slog.String("addr", s.httpServer.Addr))
-		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
-		}
-	}()
-
-	// Wait for interrupt signal
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	// Graceful shutdown with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	return s.Shutdown(ctx)
+	slog.Info("starting HTTP server", slog.String("addr", s.httpServer.Addr))
+	if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return fmt.Errorf("server error: %w", err)
+	}
+	return nil
 }
 
-// Shutdown gracefully shuts down the server
-func (s *Server) Shutdown(ctx context.Context) error {
-	slog.Info("Shutting down server...")
+// Close gracefully shuts down the server
+func (s *Server) Close(ctx context.Context) error {
+	slog.Info("Shutting down HTTP server...")
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		return fmt.Errorf("server forced to shutdown: %w", err)
 	}
-	slog.Info("Server exited gracefully")
+	slog.Info("HTTP server stopped")
 	return nil
 }
