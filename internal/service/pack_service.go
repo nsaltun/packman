@@ -14,7 +14,7 @@ import (
 type PackService interface {
 	CalculatePacks(ctx context.Context, quantity int) (*model.PackCalculationResponse, error)
 	GetPackSizes(ctx context.Context) (*model.GetPackSizesResponse, error)
-	UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error
+	UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) (*model.UpdatePackSizesResponse, error)
 }
 
 // packService is the concrete implementation of PackService
@@ -102,15 +102,20 @@ func (s *packService) GetPackSizes(ctx context.Context) (*model.GetPackSizesResp
 	}, nil
 }
 
-// UpdatePackSizes updates the pack sizes in the repository
-func (s *packService) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error {
-	err := s.packRepo.UpdatePackSizes(ctx, sizes, updatedBy)
+// UpdatePackSizes updates the pack sizes in the repository and returns the updated configuration
+func (s *packService) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) (*model.UpdatePackSizesResponse, error) {
+	res, err := s.packRepo.UpdatePackSizes(ctx, sizes, updatedBy)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			return apperror.NotFoundError("Pack configuration not found", err)
+			return nil, apperror.NotFoundError("Pack configuration not found", err)
 		}
-		return apperror.InternalError("Failed to update pack sizes", err)
+		return nil, apperror.InternalError("Failed to update pack sizes", err)
 	}
 
-	return nil
+	return &model.UpdatePackSizesResponse{
+		PackSizes: res.PackSizes,
+		UpdatedAt: res.UpdatedAt,
+		UpdatedBy: res.UpdatedBy,
+		Version:   res.Version,
+	}, nil
 }

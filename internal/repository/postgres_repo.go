@@ -74,13 +74,14 @@ func (s *postgresRepo) GetPackConfiguration(ctx context.Context) (*model.PackCon
 
 // UpdatePackSizes updates the pack size configuration with ACID guarantees
 // Uses pessimistic locking (FOR UPDATE) to prevent lost updates caused by concurrent transactions
-func (s *postgresRepo) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error {
+// Returns the updated configuration immediately after the update
+func (s *postgresRepo) UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) (*model.PackConfiguration, error) {
 	// Begin transaction with serializable isolation
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.Serializable,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Ensure transaction is rolled back only on error
@@ -103,9 +104,9 @@ func (s *postgresRepo) UpdatePackSizes(ctx context.Context, sizes []int, updated
 		FOR UPDATE`).Scan(&currentVersion)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return ErrNotFound
+			return nil, ErrNotFound
 		}
-		return err
+		return nil, err
 	}
 
 	// Archive current configuration before updating
@@ -115,27 +116,39 @@ func (s *postgresRepo) UpdatePackSizes(ctx context.Context, sizes []int, updated
 		FROM pack_configuration
 		WHERE id = 1`)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Update configuration with new sizes and increment version
-	_, err = tx.Exec(ctx, `
+	// Update configuration and return the updated row using RETURNING clause
+	var cfg model.PackConfiguration
+	var updatedAt pgtype.Timestamp
+
+	err = tx.QueryRow(ctx, `
 		UPDATE pack_configuration
 		SET pack_sizes = $1,
 		    version = version + 1,
 		    updated_at = CURRENT_TIMESTAMP,
 		    updated_by = $2
-		WHERE id = 1`, sizes, updatedBy)
+		WHERE id = 1
+		RETURNING id, version, pack_sizes, updated_at, updated_by`, sizes, updatedBy).Scan(
+		&cfg.ID,
+		&cfg.Version,
+		&cfg.PackSizes,
+		&updatedAt,
+		&cfg.UpdatedBy,
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	cfg.UpdatedAt = updatedAt.Time
 
 	// Commit transaction
 	if err = tx.Commit(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &cfg, nil
 }
 
 // GetPackConfigurationHistory returns historical configurations with pagination

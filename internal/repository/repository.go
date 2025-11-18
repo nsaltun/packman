@@ -14,8 +14,8 @@ type PackRepository interface {
 	// GetPackConfiguration returns the current active pack sizes
 	GetPackConfiguration(ctx context.Context) (*model.PackConfiguration, error)
 
-	// UpdatePackSizes updates the pack size configuration
-	UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) error
+	// UpdatePackSizes updates the pack size configuration and returns the updated configuration
+	UpdatePackSizes(ctx context.Context, sizes []int, updatedBy string) (*model.PackConfiguration, error)
 
 	// GetConfigurationHistory returns historical configurations
 	GetPackConfigurationHistory(ctx context.Context, limit int) ([]*model.PackConfiguration, error)
