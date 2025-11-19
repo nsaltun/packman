@@ -48,7 +48,7 @@ clean:
 # Start all services with docker-compose
 docker-up:
 	@echo "Starting services with docker-compose..."
-	@docker compose up -d --build
+	@docker compose up --build
 	@echo "Services started successfully"
 	@echo "Application: http://localhost:8081"
 	@echo "PostgreSQL: localhost:5432"
