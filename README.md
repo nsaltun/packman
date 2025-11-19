@@ -62,6 +62,8 @@ make run
 make docker-up
 # to stop container
 make docker-down
+# to remove containers and volumes
+make docker-clean
 ```
 
 ### Testing
