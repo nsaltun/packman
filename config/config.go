@@ -46,21 +46,26 @@ type DatabaseConfig struct {
 func NewConfig() (*Config, error) {
 	vi := viper.New()
 
-	// Set config file name and type
-	vi.SetConfigName(".env")
+	// Set config type
 	vi.SetConfigType("env")
 
-	// Add paths to search for .env file
+	// Add paths to search for config files
 	vi.AddConfigPath(".")      // Current directory
 	vi.AddConfigPath("./")     // Current directory
 	vi.AddConfigPath("../")    // Parent directory
 	vi.AddConfigPath("../../") // Two levels up
 
-	// Read .env file if it exists (ignore error if not found)
-	_ = vi.ReadInConfig()
+	// Try to read .env first, if not found fall back to .env.example
+	vi.SetConfigName(".env")
+	err := vi.ReadInConfig()
+	if err != nil {
+		// If .env doesn't exist, try .env.example
+		vi.SetConfigName(".env.example")
+		_ = vi.ReadInConfig()
+	}
 
 	// AutomaticEnv makes viper check environment variables
-	// Environment variables take precedence over .env file
+	// Environment variables take precedence over config files
 	vi.AutomaticEnv()
 
 	// Set defaults for HTTP server
