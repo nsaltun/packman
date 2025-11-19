@@ -34,26 +34,11 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - postgres
-      - migrator
+      postgres:
+        condition: service_healthy
     networks:
       - packman-network
 
-  migrator:
-    build: 
-      context: .
-      dockerfile: ./migrations/Dockerfile.migrator
-    depends_on:
-      - postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./migrations:/migrations/
-    environment:
-      GOOSE_DRIVER: postgres
-      GOOSE_MIGRATION_DIR: ./migrations
-      GOOSE_DBSTRING: "postgres://packman:packman123@postgres:5432/packman?sslmode=disable"
-    networks:
-      - packman-network
 volumes:
   postgres_data:
 
