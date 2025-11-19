@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: packman-app
+    container_name: packman-api
     environment:
       PORT: 8081
       DATABASE_URL: postgres://packman:packman123@postgres:5432/packman?sslmode=disable

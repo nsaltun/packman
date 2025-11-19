@@ -1,7 +1,7 @@
 .PHONY: help build run test clean docker-up docker-down docker-logs docker-clean postgres-up fmt lint migrate migrate_down
 
 # Variables
-APP_NAME=packman
+APP_NAME=packman-api
 
 # Default target
 help:
