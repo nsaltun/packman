@@ -13,6 +13,9 @@ The Packman API is a RESTful service that optimizes package fulfillment by calcu
 - Docker containerized deployment
 - Automated CI/CD with GitHub Actions
 
+## Ready to Use Link (Heroku)
+- Heroku: https://packman-api-55ce3a95f0f8.herokuapp.com/health
+
 ### Core Endpoints
 
 | Method | Endpoint | Description |
