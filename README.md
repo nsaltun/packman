@@ -104,13 +104,7 @@ For API docs please refer to [API.md](docs/API.md)
 git clone https://github.com/nsaltun/packman.git
 cd packman
 
-# Run with Go
-make postgres-up
-make run
-
-# Or build and run
-make postgres-up
-make build
+# Run
 make run
 ```
 

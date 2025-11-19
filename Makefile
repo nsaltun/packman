@@ -25,9 +25,7 @@ build:
 	@echo "Build complete: bin/$(APP_NAME)"
 
 # Run the application locally
-run:
-	@echo "Running $(APP_NAME)..."
-	@go run cmd/main.go
+run: docker-up
 
 # Run tests
 test:
