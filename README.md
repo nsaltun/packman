@@ -31,10 +31,13 @@ The Packman API is a RESTful service that optimizes package fulfillment by calcu
 - Deployment: Docker, Heroku
 
 
-For API docs please refer to [API.md](API.md)
+For API docs please refer to [API.md](docs/API.md)
 
 
 ## Design Notes:
+
+### Design Drawing:
+![alt text](docs/design_draw.png "Design Diagram")
 
 ### Functional Requirements:
 1. Calculate optimal pack combination for given quantity.
@@ -85,6 +88,7 @@ For API docs please refer to [API.md](API.md)
 2. Observability enhancements: integrate with monitoring tools like Prometheus/Grafana for metrics, and use distributed tracing for better request tracking.
 3. Caching strategies to improve performance for frequently requested data.
 4. Readiness and liveness probes for better orchestration in containerized environments.
+5. API Gateway for better control over API usage and monitoring. Implement rate limiting, routing, security, request/response transformations.
 
 ## Prerequisities
 - Go 1.25
